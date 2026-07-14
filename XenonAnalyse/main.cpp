@@ -7,11 +7,6 @@
 #include <fmt/core.h>
 #include "function.h"
 
-#define SWITCH_ABSOLUTE 0
-#define SWITCH_COMPUTED 1
-#define SWITCH_BYTEOFFSET 2
-#define SWITCH_SHORTOFFSET 3
-
 struct SwitchTable
 {
     std::vector<size_t> labels{};
@@ -32,7 +27,7 @@ void ReadTable(Image& image, SwitchTable& table)
     ppc::Disassemble(code + 1, table.base + 4, insn);
     pOffset += insn.operands[2];
 
-    if (table.type == SWITCH_ABSOLUTE)
+    if (table.type == 1)
     {
         const auto* offsets = (be<uint32_t>*)image.Find(pOffset);
         for (size_t i = 0; i < table.labels.size(); i++)
@@ -40,7 +35,7 @@ void ReadTable(Image& image, SwitchTable& table)
             table.labels[i] = offsets[i];
         }
     }
-    else if (table.type == SWITCH_COMPUTED)
+    else if (table.type == 2)
     {
         uint32_t base;
         uint32_t shift;
@@ -60,9 +55,9 @@ void ReadTable(Image& image, SwitchTable& table)
             table.labels[i] = base + (offsets[i] << shift);
         }
     }
-    else if (table.type == SWITCH_BYTEOFFSET || table.type == SWITCH_SHORTOFFSET)
+    else if (table.type == 3 || table.type == 4)
     {
-        if (table.type == SWITCH_BYTEOFFSET)
+        if (table.type == 3)
         {
             const auto* offsets = (uint8_t*)image.Find(pOffset);
             uint32_t base;
@@ -78,7 +73,7 @@ void ReadTable(Image& image, SwitchTable& table)
                 table.labels[i] = base + offsets[i];
             }
         }
-        else if (table.type == SWITCH_SHORTOFFSET)
+        else if (table.type == 4)
         {
             const auto* offsets = (be<uint16_t>*)image.Find(pOffset);
             uint32_t base;
@@ -250,60 +245,18 @@ int main(int argc, char** argv)
             }
         };
 
-    uint32_t absoluteSwitch[] =
+    uint32_t switch1[] =
     {
         PPC_INST_LIS,
-        PPC_INST_ADDI,
         PPC_INST_RLWINM,
+        PPC_INST_ADDI, // or subi i guess cuz subi = addi with -value
         PPC_INST_LWZX,
-        PPC_INST_MTCTR,
+        PPC_INST_MTCTR, // or mtspr because mtctr RS = mtspr 9, RS
         PPC_INST_BCTR,
     };
 
-    uint32_t computedSwitch[] =
-    {
-        PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_LBZX,
-        PPC_INST_RLWINM,
-        PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_ADD,
-        PPC_INST_MTCTR,
-    };
-
-    uint32_t offsetSwitch[] =
-    {
-        PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_LBZX,
-        PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_ADD,
-        PPC_INST_MTCTR,
-    };
-
-    uint32_t wordOffsetSwitch[] =
-    {
-        PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_RLWINM,
-        PPC_INST_LHZX,
-        PPC_INST_LIS,
-        PPC_INST_ADDI,
-        PPC_INST_ADD,
-        PPC_INST_MTCTR,
-    };
-
-    println("# ---- ABSOLUTE JUMPTABLE ----");
-    scanPattern(absoluteSwitch, std::size(absoluteSwitch), SWITCH_ABSOLUTE);
-
-    println("# ---- COMPUTED JUMPTABLE ----");
-    scanPattern(computedSwitch, std::size(computedSwitch), SWITCH_COMPUTED);
-
-    println("# ---- OFFSETED JUMPTABLE ----");
-    scanPattern(offsetSwitch, std::size(offsetSwitch), SWITCH_BYTEOFFSET);
-    scanPattern(wordOffsetSwitch, std::size(wordOffsetSwitch), SWITCH_SHORTOFFSET);
+    println("# ---- SWITCH TYPE 1 JUMPTABLE ----");
+    scanPattern(switch1, std::size(switch1), 1);
 
     std::ofstream f(argv[2]);
     f.write(out.data(), out.size());
