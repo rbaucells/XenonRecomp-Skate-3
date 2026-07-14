@@ -247,6 +247,8 @@ int main(int argc, char** argv)
 
     uint32_t switch1[] =
     {
+        PPC_INST_CMPLWI,
+        PPC_INST_BGT,
         PPC_INST_LIS,
         PPC_INST_RLWINM,
         PPC_INST_ADDI, // or subi i guess cuz subi = addi with -value
