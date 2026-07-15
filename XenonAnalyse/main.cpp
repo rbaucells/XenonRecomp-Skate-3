@@ -1,4 +1,5 @@
 #include <cassert>
+#include <complex>
 #include <iterator>
 #include <file.h>
 #include <disasm.h>
@@ -18,81 +19,46 @@ struct SwitchTable
 
 void ReadTable(Image& image, SwitchTable& table)
 {
-    uint32_t pOffset;
-    ppc_insn insn;
-    auto* code = (uint32_t*)image.Find(table.base);
-    ppc::Disassemble(code, table.base, insn);
-    pOffset = insn.operands[1] << 16;
+    const auto* code = (uint32_t*)image.Find(table.base);
 
-    ppc::Disassemble(code + 1, table.base + 4, insn);
-    pOffset += insn.operands[2];
-
-    if (table.type == 1)
+    switch (table.type)
     {
-        const auto* offsets = (be<uint32_t>*)image.Find(pOffset);
-        for (size_t i = 0; i < table.labels.size(); i++)
+        case 1:
         {
-            table.labels[i] = offsets[i];
-        }
-    }
-    else if (table.type == 2)
-    {
-        uint32_t base;
-        uint32_t shift;
-        const auto* offsets = (uint8_t*)image.Find(pOffset);
+            ppc_insn insn;
+            // lis (first instruction)
+            ppc::Disassemble(code, table.base, insn);
 
-        ppc::Disassemble(code + 4, table.base + 0x10, insn);
-        base = insn.operands[1] << 16;
+            // lis loads into upper 16 bits
+            uint32_t pOffset = insn.operands[1] << 16;
 
-        ppc::Disassemble(code + 5, table.base + 0x14, insn);
-        base += insn.operands[2];
+            // addi (3rd instruction)
+            ppc::Disassemble(code + 2, table.base + 8, insn);
 
-        ppc::Disassemble(code + 3, table.base + 0x0C, insn);
-        shift = insn.operands[2];
+            pOffset += insn.operands[2];
 
-        for (size_t i = 0; i < table.labels.size(); i++)
-        {
-            table.labels[i] = base + (offsets[i] << shift);
-        }
-    }
-    else if (table.type == 3 || table.type == 4)
-    {
-        if (table.type == 3)
-        {
-            const auto* offsets = (uint8_t*)image.Find(pOffset);
-            uint32_t base;
+            const auto* offsets = (be<uint32_t>*) image.Find(pOffset);
 
-            ppc::Disassemble(code + 3, table.base + 0x0C, insn);
-            base = insn.operands[1] << 16;
-
-            ppc::Disassemble(code + 4, table.base + 0x10, insn);
-            base += insn.operands[2];
-
-            for (size_t i = 0; i < table.labels.size(); i++)
+            for (std::size_t i = 0; i < table.labels.size(); i++)
             {
-                table.labels[i] = base + offsets[i];
+                table.labels[i] = offsets[i];
             }
+
+            break;
         }
-        else if (table.type == 4)
+        case 2:
         {
-            const auto* offsets = (be<uint16_t>*)image.Find(pOffset);
-            uint32_t base;
-
-            ppc::Disassemble(code + 4, table.base + 0x10, insn);
-            base = insn.operands[1] << 16;
-
-            ppc::Disassemble(code + 5, table.base + 0x14, insn);
-            base += insn.operands[2];
-
-            for (size_t i = 0; i < table.labels.size(); i++)
-            {
-                table.labels[i] = base + offsets[i];
-            }
+            fmt::println("type 2");
+            break;
         }
-    }
-    else
-    {
-        assert(false);
+        case 3:
+        {
+            fmt::println("type 3");
+            break;
+        }
+        default:
+            assert(false);
+            break;
     }
 }
 
@@ -249,9 +215,9 @@ int main(int argc, char** argv)
     {
         PPC_INST_LIS,
         PPC_INST_RLWINM,
-        PPC_INST_ADDI, // or subi i guess cuz subi = addi with -value
+        PPC_INST_ADDI,
         PPC_INST_LWZX,
-        PPC_INST_MTCTR, // or mtspr because mtctr RS = mtspr 9, RS
+        PPC_INST_MTCTR,
         PPC_INST_BCTR,
     };
 
