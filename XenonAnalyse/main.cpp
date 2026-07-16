@@ -26,72 +26,100 @@ void ReadTable(const Image& image, SwitchTable& table)
 {
     const auto* code = (uint32_t*)image.Find(table.base);
 
-    switch (table.type)
+    if (table.type == 1)
     {
-        case 1:
+        ppc_insn insn;
+        // lis (first instruction)
+        ppc::Disassemble(code, table.base, insn);
+
+        // lis loads into upper 16 bits
+        uint32_t pOffset = insn.operands[1] << 16;
+
+        // addi (3rd instruction)
+        ppc::Disassemble(code + 2, table.base + 8, insn);
+
+        pOffset += insn.operands[2];
+
+        const auto* offsets = (be<uint32_t>*) image.Find(pOffset);
+
+        for (std::size_t i = 0; i < table.labels.size(); i++)
         {
-            ppc_insn insn;
-            // lis (first instruction)
-            ppc::Disassemble(code, table.base, insn);
-
-            // lis loads into upper 16 bits
-            uint32_t pOffset = insn.operands[1] << 16;
-
-            // addi (3rd instruction)
-            ppc::Disassemble(code + 2, table.base + 8, insn);
-
-            pOffset += insn.operands[2];
-
-            const auto* offsets = (be<uint32_t>*) image.Find(pOffset);
-
-            for (std::size_t i = 0; i < table.labels.size(); i++)
-            {
-                table.labels[i] = offsets[i];
-            }
+            table.labels[i] = offsets[i];
         }
-            break;
-        case 2:
+    }
+    else if (table.type == 2)
+    {
+        ppc_insn insn;
+
+        // lis (first instruction)
+        ppc::Disassemble(code , table.base, insn);
+
+        // lis loads into upper 16 bits
+        uint32_t pOffset = insn.operands[1] << 16;
+
+        // addi (3rd instruction)
+        ppc::Disassemble(code + 2, table.base + 8, insn);
+
+        pOffset += insn.operands[2];
+
+        const auto* offsets = (be<uint16_t>*) image.Find(pOffset);
+
+        // lis (5th instruction)
+        ppc::Disassemble(code + 4, table.base + 16, insn);
+
+        // lis loads into upper 16 bits
+        uint32_t base = insn.operands[1] << 16;
+
+        // addi (6th instruction)
+        ppc::Disassemble(code + 5, table.base + 20, insn);
+
+        base += insn.operands[2];
+
+        for (std::size_t i = 0; i < table.labels.size(); i++)
         {
-            ppc_insn insn;
-            ppc::Disassemble(code , table.base, insn);
-
-            // lis loads into upper 16 bits
-            uint32_t pOffset = insn.operands[1] << 16;
-
-            ppc::Disassemble(code + 2, table.base + 8, insn);
-
-            pOffset += insn.operands[2];
-
-            fmt::println("pOffset = 0x{:x}", pOffset);
-            const auto* offsets = (be<uint16_t>*) image.Find(pOffset);
-
-            uint32_t base;
-
-            ppc::Disassemble(code + 4, table.base + 16, insn);
-
-            base = insn.operands[1] << 16;
-
-            ppc::Disassemble(code + 5, table.base + 20, insn);
-            base += insn.operands[2];
-
-            fmt::println("base = 0x{:x}, base + pOffset = {}", base, base + pOffset);
-
-            fmt::println("table.labels.size() = {}", table.labels.size());
-
-            for (std::size_t i = 0; i < table.labels.size(); i++)
-            {
-                table.labels[i] = base + offsets[i];
-            }
+            table.labels[i] = base + offsets[i];
         }
-            break;
-        case 3:
+    }
+    else if (table.type == 3)
+    {
+        ppc_insn insn;
+
+        // lis (first instruction)
+        ppc::Disassemble(code , table.base, insn);
+
+        // lis loads into upper 16 bits
+        uint32_t pOffset = insn.operands[1] << 16;
+
+        // addi (second instruction)
+        ppc::Disassemble(code + 1, table.base + 4, insn);
+
+        pOffset += insn.operands[2];
+
+        const auto* offsets = (uint8_t*) image.Find(pOffset);
+
+        // rlwinm (4th instruction)
+        ppc::Disassemble(code + 3, table.base + 12, insn);
+
+        const uint32_t shift = insn.operands[2];
+
+        // lis (5th instruction)
+        ppc::Disassemble(code + 4, table.base + 16, insn);
+
+        uint32_t base = insn.operands[1] << 16;
+
+        // lis (7th instruction)
+        ppc::Disassemble(code + 6, table.base + 24, insn);
+
+        base += insn.operands[2];
+
+        for (std::size_t i = 0; i < table.labels.size(); i++)
         {
-            // fmt::println("type 3");
+            table.labels[i] = base + (offsets[i] << shift);
         }
-            break;
-        default:
+    }
+    else
+    {
             assert(false);
-            break;
     }
 }
 
@@ -240,6 +268,10 @@ int main(int argc, char** argv)
 
                 if (data != nullptr)
                 {
+                    if (type == 3) {
+                        fmt::println("Found type 3 at 0x{:x}", base + (data - dataStart));
+                    }
+
                     SwitchTable table{};
                     table.type = type;
                     ScanTable((uint32_t*)data, base + (data - dataStart), table);
@@ -287,6 +319,23 @@ int main(int argc, char** argv)
 
     println("# ---- SWITCH TYPE 2 JUMPTABLE ----");
     scanPattern(switch2, std::size(switch2), 2);
+
+    uint32_t switch3[] =
+    {
+        PPC_INST_LIS,
+        PPC_INST_ADDI,
+        PPC_INST_LBZX,
+        PPC_INST_RLWINM,
+        PPC_INST_LIS,
+        PPC_INST_NOP,
+        PPC_INST_ADDI,
+        PPC_INST_ADD,
+        PPC_INST_MTCTR,
+        PPC_INST_BCTR,
+    };
+
+    println("# ---- SWITCH TYPE 3 JUMPTABLE ----");
+    scanPattern(switch3, std::size(switch3), 3);
 
     std::ofstream f(argv[2]);
     f.write(out.data(), out.size());
