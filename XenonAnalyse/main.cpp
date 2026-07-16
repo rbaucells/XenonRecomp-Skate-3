@@ -52,12 +52,41 @@ void ReadTable(const Image& image, SwitchTable& table)
             break;
         case 2:
         {
-            fmt::println("type 2");
+            ppc_insn insn;
+            ppc::Disassemble(code , table.base, insn);
+
+            // lis loads into upper 16 bits
+            uint32_t pOffset = insn.operands[1] << 16;
+
+            ppc::Disassemble(code + 2, table.base + 8, insn);
+
+            pOffset += insn.operands[2];
+
+            fmt::println("pOffset = 0x{:x}", pOffset);
+            const auto* offsets = (be<uint16_t>*) image.Find(pOffset);
+
+            uint32_t base;
+
+            ppc::Disassemble(code + 4, table.base + 16, insn);
+
+            base = insn.operands[1] << 16;
+
+            ppc::Disassemble(code + 5, table.base + 20, insn);
+            base += insn.operands[2];
+
+            fmt::println("base = 0x{:x}, base + pOffset = {}", base, base + pOffset);
+
+            fmt::println("table.labels.size() = {}", table.labels.size());
+
+            for (std::size_t i = 0; i < table.labels.size(); i++)
+            {
+                table.labels[i] = base + offsets[i];
+            }
         }
             break;
         case 3:
         {
-            fmt::println("type 3");
+            // fmt::println("type 3");
         }
             break;
         default:
