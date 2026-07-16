@@ -48,19 +48,18 @@ void ReadTable(const Image& image, SwitchTable& table)
             {
                 table.labels[i] = offsets[i];
             }
-
-            break;
         }
+            break;
         case 2:
         {
             fmt::println("type 2");
-            break;
         }
+            break;
         case 3:
         {
             fmt::println("type 3");
-            break;
         }
+            break;
         default:
             assert(false);
             break;
@@ -242,6 +241,23 @@ int main(int argc, char** argv)
 
     println("# ---- SWITCH TYPE 1 JUMPTABLE ----");
     scanPattern(switch1, std::size(switch1), 1);
+
+    uint32_t switch2[] =
+    {
+        PPC_INST_LIS,
+        PPC_INST_RLWINM,
+        PPC_INST_ADDI,
+        PPC_INST_LHZX,
+        PPC_INST_LIS,
+        PPC_INST_ADDI,
+        PPC_INST_NOP,
+        PPC_INST_ADD,
+        PPC_INST_MTCTR,
+        PPC_INST_BCTR,
+    };
+
+    println("# ---- SWITCH TYPE 2 JUMPTABLE ----");
+    scanPattern(switch2, std::size(switch2), 2);
 
     std::ofstream f(argv[2]);
     f.write(out.data(), out.size());
