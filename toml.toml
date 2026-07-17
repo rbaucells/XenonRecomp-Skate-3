@@ -1,0 +1,19 @@
+[main]
+file_path = "skate-3/default.xex"
+# patch_file_path = ""
+patched_file_path = "skate-3/default_patched.xex"
+out_directory_path = "ppc"
+switch_table_file_path = "skate-3/jump_table.toml"
+
+# functions
+restgprlr_14_address = 0x82f274e0
+savegprlr_14_address = 0x82f27490
+restfpr_14_address = 0x82f2845c
+savefpr_14_address = 0x82f28410
+restvmx_14_address = 0x82f2c4a8
+savevmx_14_address = 0x82f2c210
+restvmx_64_address = 0x82f2c53c
+savevmx_64_address = 0x82f2c2a4
+
+longjmp_address = 0x82f25260
+setjmp_address = 0x82f44e40
