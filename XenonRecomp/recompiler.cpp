@@ -1591,6 +1591,12 @@ bool Recompiler::Recompile(
         println("{}, {}.u16);", int32_t(insn.operands[1]), r(insn.operands[0]));
         break;
 
+    case PPC_INST_STHU:
+        println("\t{} = {} + {}.u32;", ea(), int32_t(insn.operands[1]), r(insn.operands[2]));
+        println("\tPPC_STORE_U16({}, {}.u16);", ea(), r(insn.operands[0]));
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
     case PPC_INST_STHBRX:
         print("{}", mmioStore() ? "\tPPC_MM_STORE_U16(" : "\tPPC_STORE_U16(");
         if (insn.operands[1] != 0)
