@@ -668,6 +668,12 @@ bool Recompiler::Recompile(
         println("\tif ({}.u32 != 0 && !{}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
         break;
 
+    case PPC_INST_BDZF:
+        // NOTE: assuming eq here as a shortcut because all the instructions in the game do that
+        println("\t--{}.u64;", ctr());
+        println("\tif ({}.u32 == 0 && !{}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
+        break;
+
     case PPC_INST_BEQ:
         printConditionalBranch(false, "eq");
         break;
