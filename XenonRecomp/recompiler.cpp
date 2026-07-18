@@ -1131,6 +1131,12 @@ bool Recompiler::Recompile(
         println("{});", int32_t(insn.operands[1]));
         break;
 
+    case PPC_INST_LHZU:
+        println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
+        println("\t{}.u64 = PPC_LOAD_U16({});", r(insn.operands[0]), ea());
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
     case PPC_INST_LHZX:
         print("\t{}.u64 = PPC_LOAD_U16(", r(insn.operands[0]));
         if (insn.operands[1] != 0)
