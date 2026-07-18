@@ -1575,6 +1575,12 @@ bool Recompiler::Recompile(
         println("{}, {}.u32);", int32_t(insn.operands[1]), temp());
         break;
 
+    case PPC_INST_STFSU:
+        println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
+        println("\tPPC_STORE_U32({}, *reinterpret_cast<uint32_t*>(&{}.f32));", ea(), f(insn.operands[0]));
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
     case PPC_INST_STFSX:
         printSetFlushMode(false);
         println("\t{}.f32 = float({}.f64);", temp(), f(insn.operands[0]));
