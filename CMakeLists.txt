@@ -11,6 +11,9 @@ if (POLICY CMP0141 AND MSVC)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<CONFIG:Debug,RelWithDebInfo>,EditAndContinue,ProgramDatabase>")
 endif()
 
+# better debugging in windows
+set(CMAKE_CXX_FLAGS_DEBUG "-g -gdwarf-4 -O0 -fno-omit-frame-pointer")
+
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 add_subdirectory(${THIRDPARTY_ROOT})
