@@ -622,4 +622,13 @@ functions = [
     { address = 0x823c9478, size = 0x50f0 },
     { address = 0x823f0a70, size = 0x65f8 },
     { address = 0x823c2528, size = 0x6f50 },
+    { address = 0x82486d00, size = 0x288 },
+    { address = 0x8257dae0, size = 0x480 },
+    { address = 0x825d3a08, size = 0x1e0 },
+    { address = 0x826d9728, size = 0x210 },
+    { address = 0x826ea9a0, size = 0x110 },
+    { address = 0x8270f678, size = 0x290 },
+    { address = 0x8288df68, size = 0x538 },
+    { address = 0x82a1d278, size = 0x2d8 },
+    { address = 0x82bd30e8, size = 0x78 },
 ]
