@@ -1116,6 +1116,12 @@ bool Recompiler::Recompile(
         println("\t{}.f64 = double({}.f32);", f(insn.operands[0]), temp());
         break;
 
+    case PPC_INST_LFSU:
+        println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
+        println("\t{}.f64 = *reinterpret_cast<float*>(&PPC_LOAD_U32({}));");
+        println("\t{}.u32 = {};", r(insn.operands[0]), ea());
+        break;
+
     case PPC_INST_LFSX:
         printSetFlushMode(false);
         print("\t{}.u32 = PPC_LOAD_U32(", temp());
@@ -1525,6 +1531,12 @@ bool Recompiler::Recompile(
         if (insn.operands[1] != 0)
             print("{}.u32 + ", r(insn.operands[1]));
         println("{}.u32, {}.u8);", r(insn.operands[2]), r(insn.operands[0]));
+        break;
+
+    case PPC_INST_STBUX:
+        println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
+        println("\tPPC_STORE_U8({}, {}.u8);", ea(), r(insn.operands[0]));
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
         break;
 
     case PPC_INST_STD:
