@@ -1119,7 +1119,7 @@ bool Recompiler::Recompile(
 
     case PPC_INST_LFSU:
         println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
-        println("\t{}.f64 = *reinterpret_cast<float*>(&PPC_LOAD_U32({}));");
+        println("\t{}.f64 = *reinterpret_cast<float*>(&PPC_LOAD_U32({}));", r(insn.operands[0]), ea());
         println("\t{}.u32 = {};", r(insn.operands[0]), ea());
         break;
 
