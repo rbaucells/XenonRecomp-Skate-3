@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "recompiler.h"
+
 #include <xex_patcher.h>
 
 static uint64_t ComputeMask(uint32_t mstart, uint32_t mstop)
@@ -1817,6 +1818,10 @@ bool Recompiler::Recompile(
         println("\tsimde_mm_store_si128((simde__m128i*){}.s16, simde_mm_adds_epi16(simde_mm_load_si128((simde__m128i*){}.s16), simde_mm_load_si128((simde__m128i*){}.s16)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
         break;
 
+    case PPC_INST_VADDSWS:
+        println("\tsimde_mm_store_si128((simde__m128i*){}.u32, simde_mm_adds_epi32(simde_mm_load_si128((simde__m128i*){}.s32), simde_mm_load_si128((simde__m128i*){}.s32)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
+        break;
+
     case PPC_INST_VADDUBM:
         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_add_epi8(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
         break;
@@ -2050,6 +2055,17 @@ bool Recompiler::Recompile(
 
         break;
 
+    case PPC_INST_VNOR:
+    case PPC_INST_VNOR128:
+        print("\tsimde_mm_store_si128((simde__m128i*){}.u8, ", v(insn.operands[0]));
+
+        if (insn.operands[1] != insn.operands[2])
+            println("simde_x_mm_not_si128(simde_mm_or_si128(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8))));", v(insn.operands[1]), v(insn.operands[2]));
+        else
+            println("simde_x_mm_not_si128(simde_mm_load_si128((simde__m128i*){}.u8)));", v(insn.operands[1]));
+
+        break;
+
     case PPC_INST_VPERM:
     case PPC_INST_VPERM128:
         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_perm_epi8_(simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8), simde_mm_load_si128((simde__m128i*){}.u8)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]), v(insn.operands[3]));
@@ -2201,6 +2217,10 @@ bool Recompiler::Recompile(
 
     case PPC_INST_VSPLTISB:
         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_set1_epi8(char(0x{:X})));", v(insn.operands[0]), insn.operands[1]);
+        break;
+
+    case PPC_INST_VSPLTISH:
+        println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_set1_epi16(int16_t(0x{:X})));", v(insn.operands[0]), insn.operands[1]);
         break;
 
     case PPC_INST_VSPLTISW:
