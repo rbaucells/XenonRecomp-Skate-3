@@ -11,10 +11,12 @@ if(TEST_FILES)
             XenonUtils
             fmt::fmt
     )
-    target_compile_options(XenonTests
-        PRIVATE 
-            "-march=sandybridge"
-            "-Wno-unused-label"
-            "-Wno-unused-variable"
-    )
+
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(my_program PRIVATE -march=sandybridge "-Wno-unused-label" "-Wno-unused-variable")
+        elseif(MSVC)
+            target_compile_options(my_program PRIVATE /arch:AVX "-Wno-unused-label" "-Wno-unused-variable")
+        endif()
+    endif()
 endif()

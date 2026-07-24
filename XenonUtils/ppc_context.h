@@ -262,7 +262,7 @@ struct PPCFPSCRRegister
         csr = getcsr();
         return HostToGuest[(csr & RoundMask) >> RoundShift];
     }
-        
+
     inline void storeFromGuest(uint32_t value) noexcept
     {
         csr &= ~RoundMask;
@@ -686,6 +686,12 @@ inline simde__m128i simde_mm_vsr(simde__m128i a, simde__m128i b)
 {
     b = simde_mm_srli_epi64(simde_mm_slli_epi64(b, 61), 61);
     return simde_mm_castps_si128(simde_mm_insert_ps(simde_mm_castsi128_ps(simde_mm_srl_epi64(a, b)), simde_mm_castsi128_ps(simde_mm_srl_epi64(simde_mm_srli_si128(a, 4), b)), 0x10));
+}
+
+inline simde__m128i simde_mm_vsl(simde__m128i a, simde__m128i b)
+{
+    b = simde_mm_srli_epi64(simde_mm_slli_epi64(b, 61), 61);
+    return simde_mm_or_si128(simde_mm_sll_epi64(a, b), simde_mm_slli_si128(simde_mm_srl_epi64(a, simde_mm_sub_epi64(simde_mm_set1_epi64x(64), b)), 8));
 }
 
 #if defined(__aarch64__) || defined(_M_ARM64)
