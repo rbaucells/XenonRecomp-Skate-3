@@ -2111,7 +2111,7 @@ bool Recompiler::Recompile(
             {
         		// Strip sign from source
         		println("\t{}.u32 = ({}.u32[{}]&0x7FFFFFFF);", temp(), v(insn.operands[1]), i);
-        		// If |source| is > 65504, clamp output to 0x7FFF, else save 8 exponent bits 
+        		// If |source| is > 65504, clamp output to 0x7FFF, else save 8 exponent bits
         		println("\t{0}.u8[0] = ({1}.f32 != {1}.f32) || ({1}.f32 > 65504.0f) ? 0xFF : (({2}.u32[{3}]&0x7f800000)>>23);", vTemp(), temp(), v(insn.operands[1]), i);
         		// If 8 exponent bits were saved, it can only be 0x8E at most
         		// If saved, save first 10 bits of mantissa
@@ -2134,6 +2134,18 @@ bool Recompiler::Recompile(
     case PPC_INST_VPKSHUS:
     case PPC_INST_VPKSHUS128:
         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_packus_epi16(simde_mm_load_si128((simde__m128i*){}.s16), simde_mm_load_si128((simde__m128i*){}.s16)));", v(insn.operands[0]), v(insn.operands[2]), v(insn.operands[1]));
+        break;
+
+    case PPC_INST_VPKUWUM:
+    case PPC_INST_VPKUWUM128:
+        // TODO: vectorize, ensure endianness is correct
+        for (int i = 0; i < 4; i++) {
+            println("\t{0}.u16[{1}] = (uint16_t) {2}.u32[{1}];", v(insn.operands[0]), i, v(insn.operands[1]));
+        }
+
+        for (int i = 0; i < 4; i++) {
+            println("\t{0}.u16[{1} + 4] = (uint16_t) {2}.u32[{1}];", v(insn.operands[0]), i, v(insn.operands[2]));
+        }
         break;
 
     case PPC_INST_VREFP:
@@ -2167,6 +2179,16 @@ bool Recompiler::Recompile(
         println("\tsimde_mm_store_ps({}.f32, simde_mm_blend_ps(simde_mm_load_ps({}.f32), simde_mm_permute_ps(simde_mm_load_ps({}.f32), {}), {}));", v(insn.operands[0]), v(insn.operands[0]), v(insn.operands[1]), shuffles[insn.operands[3]], insn.operands[2]);
         break;
     }
+
+    case PPC_INST_VRLW:
+    case PPC_INST_VRLW128:
+        // TODO: vectorize, ensure endianness is correct
+        for (size_t i = 0; i < 4; i++)
+        {
+            println("\t{0}.u32 = {1}.u32[{2}] & 0x1F;", temp(), v(insn.operands[2]), i);
+            println("\t{0}.u32[{1}] = ({2}.u32[{1}] << {3}.u32) | ({2}.u32[{1}] >> ((32 - {3}.u32) & 31));", v(insn.operands[0]), i, v(insn.operands[1]), temp());
+        }
+        break;
 
     case PPC_INST_VRSQRTEFP:
     case PPC_INST_VRSQRTEFP128:
