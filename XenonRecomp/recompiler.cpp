@@ -1175,7 +1175,7 @@ bool Recompiler::Recompile(
     case PPC_INST_LHAU:
         println("\t{} = {} + {}.u32;", ea(), int32_t(insn.operands[1]), r(insn.operands[2]));
         println("\t{}.s64 = int16_t(PPC_LOAD_U16({}));", r(insn.operands[0]), ea());
-        println("\t{}.u32 = {}", r(insn.operands[0]), ea());
+        println("\t{}.u32 = {};", r(insn.operands[0]), ea());
         break;
 
     case PPC_INST_LHZ:

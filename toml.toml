@@ -631,4 +631,5 @@ functions = [
     { address = 0x8288df68, size = 0x538 },
     { address = 0x82a1d278, size = 0x2d8 },
     { address = 0x82bd30e8, size = 0x78 },
+    { address = 0x828c5b40, size = 0xe0 }
 ]
