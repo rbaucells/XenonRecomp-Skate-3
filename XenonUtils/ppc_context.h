@@ -629,6 +629,28 @@ inline simde__m128i simde_mm_adds_epu32(simde__m128i a, simde__m128i b)
     return simde_mm_add_epi32(a, simde_mm_min_epu32(simde_mm_xor_si128(a, simde_mm_cmpeq_epi32(a, a)), b));
 }
 
+inline simde__m128i simde_mm_adds_epi32(simde__m128i a, simde__m128i b)
+{
+    simde__m128i sum = simde_mm_add_epi32(a, b);
+
+    simde__m128i overflow_mask = simde_mm_andnot_si128(
+        simde_mm_xor_si128(a, b),
+        simde_mm_xor_si128(a, sum)
+    );
+
+    // 0xFFFFFFFF for when overflow/underflow, 0x00000000 otherwise
+    const simde__m128i overflow_lanes = simde_mm_srai_epi32(overflow_mask, 31);
+
+    // if a neg, underflowed limit to INT32_MIN
+    // if a pos or zero, overflowed limit to INT32_MAX
+    const simde__m128i sat_limit =simde_mm_xor_si128(simde_mm_srai_epi32(a, 31),simde_mm_set1_epi32(INT32_MAX));
+
+    return simde_mm_or_si128(
+        simde_mm_and_si128(overflow_lanes, sat_limit),
+        simde_mm_andnot_si128(overflow_lanes, sum)
+    );
+}
+
 inline simde__m128i simde_mm_avg_epi8(simde__m128i a, simde__m128i b)
 {
     simde__m128i c = simde_mm_set1_epi8(char(128));

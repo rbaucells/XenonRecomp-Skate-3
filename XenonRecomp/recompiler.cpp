@@ -1138,14 +1138,14 @@ bool Recompiler::Recompile(
     case PPC_INST_LFSU:
         println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
         println("\t{}.u32 = PPC_LOAD_U32({});", temp(), ea());
-        println("\t{}.f64 = double({}.u64)", r(insn.operands[0]), temp());
+        println("\t{}.f64 = double({}.u64);", r(insn.operands[0]), temp());
         println("\t{}.u32 = {};", r(insn.operands[0]), ea());
         break;
 
     case PPC_INST_LFSUX:
         println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
         println("\t{}.u32 = PPC_LOAD_U32({});", temp(), ea());
-        println("\t{}.f64 = double({}.u64)", r(insn.operands[0]), temp());
+        println("\t{}.f64 = double({}.u64);", r(insn.operands[0]), temp());
         println("\t{}.u32 = {};", r(insn.operands[0]), ea());
         break;
 
