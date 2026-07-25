@@ -1214,6 +1214,7 @@ bool Recompiler::Recompile(
 
     case PPC_INST_LVEWX:
     case PPC_INST_LVEWX128:
+    case PPC_INST_LVEHX:
     case PPC_INST_LVX:
     case PPC_INST_LVX128:
         // NOTE: for endian swapping, we reverse the whole vector instead of individual elements.
