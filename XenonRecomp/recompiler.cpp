@@ -1948,6 +1948,16 @@ bool Recompiler::Recompile(
             println("simde_mm_load_ps({}.f32)));", v(insn.operands[1]));
         break;
 
+    case PPC_INST_VCTUXS:
+    case PPC_INST_VCFPUXWS128:
+        printSetFlushMode(true);
+        print("\tsimde_mm_store_si128((simde__m128i*){}.u32, simde_mm_vctuxs(", v(insn.operands[0]));
+        if (insn.operands[2] != 0)
+            println("simde_mm_mul_ps(simde_mm_load_ps({}.f32), simde_mm_set1_ps({}))));", v(insn.operands[1]), 1u << insn.operands[2]);
+        else
+            println("simde_mm_load_ps({}.f32)));", v(insn.operands[1]));
+        break;
+
     case PPC_INST_VCFSX:
     case PPC_INST_VCSXWFP128:
     {
@@ -2030,6 +2040,10 @@ bool Recompiler::Recompile(
 
     case PPC_INST_VCMPGTUH:
         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_cmpgt_epu16(simde_mm_load_si128((simde__m128i*){}.u16), simde_mm_load_si128((simde__m128i*){}.u16)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
+        break;
+
+    case PPC_INST_VCMPGTUW:
+        println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_cmpgt_epu32(simde_mm_load_si128((simde__m128i*){}.u32), simde_mm_load_si128((simde__m128i*){}.u32)));", v(insn.operands[0]), v(insn.operands[1]), v(insn.operands[2]));
         break;
 
     case PPC_INST_VEXPTEFP:
@@ -2211,6 +2225,11 @@ bool Recompiler::Recompile(
         println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_packus_epi16(simde_mm_load_si128((simde__m128i*){}.s16), simde_mm_load_si128((simde__m128i*){}.s16)));", v(insn.operands[0]), v(insn.operands[2]), v(insn.operands[1]));
         break;
 
+    case PPC_INST_VPKSWSS:
+    case PPC_INST_VPKSWSS128:
+        println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_packs_epi32(simde_mm_load_si128((simde__m128i*){}.s32), simde_mm_load_si128((simde__m128i*){}.s32)));", v(insn.operands[0]), v(insn.operands[2]), v(insn.operands[1]));
+        break;
+
     case PPC_INST_VPKUWUM:
     case PPC_INST_VPKUWUM128:
         // TODO: vectorize, ensure endianness is correct
@@ -2220,6 +2239,23 @@ bool Recompiler::Recompile(
 
         for (int i = 0; i < 4; i++) {
             println("\t{0}.u16[{1} + 4] = (uint16_t) {2}.u32[{1}];", v(insn.operands[0]), i, v(insn.operands[2]));
+        }
+        break;
+
+    case PPC_INST_VPKUWUS:
+    case PPC_INST_VPKUWUS128:
+        println("\tsimde_mm_store_si128((simde__m128i*){}.u8, simde_mm_packus_epu32(simde_mm_load_si128((simde__m128i*){}.s32), simde_mm_load_si128((simde__m128i*){}.s32)));", v(insn.operands[0]), v(insn.operands[2]), v(insn.operands[1]));
+        break;
+
+    case PPC_INST_VPKUHUM:
+    case PPC_INST_VPKUHUM128:
+        // TODO: vectorize, ensure endianness is correct
+        for (int i = 0; i < 8; i++) {
+            println("\t{0}.u8[{1}] = (uint8_t) {2}.u16[{1}];", v(insn.operands[0]), i, v(insn.operands[1]));
+        }
+
+        for (int i = 0; i < 8; i++) {
+            println("\t{0}.u8[{1} + 8] = (uint8_t) {2}.u16[{1}];", v(insn.operands[0]), i, v(insn.operands[2]));
         }
         break;
 

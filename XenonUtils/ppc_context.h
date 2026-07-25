@@ -672,6 +672,21 @@ inline simde__m128i simde_mm_cmpgt_epu16(simde__m128i a, simde__m128i b)
     return simde_mm_cmpgt_epi16(simde_mm_xor_si128(a, c), simde_mm_xor_si128(b, c));
 }
 
+inline simde__m128i simde_mm_cmpgt_epu32(simde__m128i a, simde__m128i b)
+{
+    simde__m128i c = simde_mm_set1_epi32(int(2147483648U));
+    return simde_mm_cmpgt_epi32(simde_mm_xor_si128(a, c), simde_mm_xor_si128(b, c));
+}
+
+inline simde__m128i simde_mm_packus_epu32(simde__m128i a, simde__m128i b) {
+    const simde__m128i max = simde_mm_set1_epi32(65535);
+
+    const simde__m128i a_clamped = simde_mm_min_epu32(a, max);
+    const simde__m128i b_clamped = simde_mm_min_epu32(b, max);
+
+    return simde_mm_packus_epi32(a_clamped, b_clamped);
+}
+
 inline simde__m128i simde_mm_vctsxs(simde__m128 src1)
 {
     simde__m128 xmm2 = simde_mm_cmpunord_ps(src1, src1);
@@ -680,6 +695,31 @@ inline simde__m128i simde_mm_vctsxs(simde__m128 src1)
     xmm1 = simde_mm_andnot_si128(simde_mm_castps_si128(src1), xmm1);
     simde__m128 dest = simde_mm_blendv_ps(simde_mm_castsi128_ps(xmm0), simde_mm_castsi128_ps(simde_mm_set1_epi32(INT_MAX)), simde_mm_castsi128_ps(xmm1));
     return simde_mm_andnot_si128(simde_mm_castps_si128(xmm2), simde_mm_castps_si128(dest));
+}
+
+inline simde__m128i simde_mm_vctuxs(simde__m128 src1)
+{
+    const simde__m128 two31 = simde_mm_set1_ps(2147483648.0f);
+    const simde__m128 two32 = simde_mm_set1_ps(4294967296.0f);
+    // find nan
+    simde__m128 nan = simde_mm_cmpunord_ps(src1, src1);
+    // find negative
+    simde__m128 neg = simde_mm_cmplt_ps(src1, simde_mm_setzero_ps());
+    // find over 2^31
+    simde__m128 hi = simde_mm_cmpge_ps(src1, two32);
+    // subtraction 2^31 to put in range of int32_t
+    simde__m128 biased = simde_mm_sub_ps(src1, two31);
+    // convert from float to int32_t
+    simde__m128i result = simde_mm_cvttps_epi32(biased);
+    // undo subtraction of 2^31
+    result = simde_mm_xor_si128(result, simde_mm_set1_epi32(INT_MIN));
+    // anything negative is 0
+    result = simde_mm_andnot_si128(simde_mm_castps_si128(neg), result);
+    // anything nan is 0
+    result = simde_mm_andnot_si128(simde_mm_castps_si128(nan), result);
+    // anything over 2^32 is UINT_MAX
+    result = simde_mm_castps_si128(simde_mm_blendv_ps(simde_mm_castsi128_ps(result), simde_mm_castsi128_ps(simde_mm_set1_epi32(-1)), hi));
+    return result;
 }
 
 inline simde__m128i simde_mm_vsr(simde__m128i a, simde__m128i b)
