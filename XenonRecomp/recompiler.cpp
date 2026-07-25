@@ -684,6 +684,12 @@ bool Recompiler::Recompile(
         println("\tif ({}.u32 != 0 && !{}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
         break;
 
+    case PPC_INST_BDNZT:
+        // NOTE: assuming eq here as a shortcut because all the instructions in the game do that
+        println("\t--{}.u64;", ctr());
+        println("\tif ({}.u32 != 0 && {}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
+        break;
+
     case PPC_INST_BDZF:
         // NOTE: assuming eq here as a shortcut because all the instructions in the game do that
         println("\t--{}.u64;", ctr());
@@ -1136,6 +1142,13 @@ bool Recompiler::Recompile(
         println("\t{}.u32 = {};", r(insn.operands[0]), ea());
         break;
 
+    case PPC_INST_LFSUX:
+        println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
+        println("\t{}.u32 = PPC_LOAD_U32({});", temp(), ea());
+        println("\t{}.f64 = double({}.u64)", r(insn.operands[0]), temp());
+        println("\t{}.u32 = {};", r(insn.operands[0]), ea());
+        break;
+
     case PPC_INST_LFSX:
         printSetFlushMode(false);
         print("\t{}.u32 = PPC_LOAD_U32(", temp());
@@ -1159,6 +1172,12 @@ bool Recompiler::Recompile(
         println("{}.u32));", r(insn.operands[2]));
         break;
 
+    case PPC_INST_LHAU:
+        println("\t{} = {} + {}.u32;", ea(), int32_t(insn.operands[1]), r(insn.operands[2]));
+        println("\t{}.s64 = int16_t(PPC_LOAD_U16({}));", r(insn.operands[0]), ea());
+        println("\t{}.u32 = {}", r(insn.operands[0]), ea());
+        break;
+
     case PPC_INST_LHZ:
         print("\t{}.u64 = PPC_LOAD_U16(", r(insn.operands[0]));
         if (insn.operands[2] != 0)
@@ -1168,6 +1187,12 @@ bool Recompiler::Recompile(
 
     case PPC_INST_LHZU:
         println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
+        println("\t{}.u64 = PPC_LOAD_U16({});", r(insn.operands[0]), ea());
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
+    case PPC_INST_LHZUX:
+        println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
         println("\t{}.u64 = PPC_LOAD_U16({});", r(insn.operands[0]), ea());
         println("\t{}.u32 = {};", r(insn.operands[2]), ea());
         break;
@@ -1279,6 +1304,12 @@ bool Recompiler::Recompile(
         println("\t{}.u32 = {};", r(insn.operands[2]), ea());
         break;
 
+    case PPC_INST_LWZUX:
+        println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
+        println("\t{}.u64 = PPC_LOAD_U32({});", r(insn.operands[0]), ea());
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
     case PPC_INST_LWZX:
         print("\t{}.u64 = PPC_LOAD_U32(", r(insn.operands[0]));
         if (insn.operands[1] != 0)
@@ -1370,6 +1401,12 @@ bool Recompiler::Recompile(
         break;
 
     case PPC_INST_MULHDU:
+        println("\t{}.u64 = {}.u64 * {}.u64;", r(insn.operands[0]), r(insn.operands[1]), r(insn.operands[2]));
+        if (strchr(insn.opcode->name, '.'))
+            println("\t{}.compare<int32_t>({}.s32, 0, {});", cr(0), r(insn.operands[0]), xer());
+        break;
+
+    case PPC_INST_MULHD:
         println("\t{}.u64 = {}.u64 * {}.u64;", r(insn.operands[0]), r(insn.operands[1]), r(insn.operands[2]));
         if (strchr(insn.opcode->name, '.'))
             println("\t{}.compare<int32_t>({}.s32, 0, {});", cr(0), r(insn.operands[0]), xer());
@@ -1582,6 +1619,12 @@ bool Recompiler::Recompile(
         println("\t{}.u32 = {};", r(insn.operands[2]), ea());
         break;
 
+    case PPC_INST_STDUX:
+        println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
+        println("\tPPC_STORE_U64({}, {}.u64);", ea(), r(insn.operands[0]));
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
     case PPC_INST_STDX:
         print("{}", mmioStore() ? "\tPPC_MM_STORE_U64(" : "\tPPC_STORE_U64(");
         if (insn.operands[1] != 0)
@@ -1595,6 +1638,12 @@ bool Recompiler::Recompile(
         if (insn.operands[2] != 0)
             print("{}.u32 + ", r(insn.operands[2]));
         println("{}, {}.u64);", int32_t(insn.operands[1]), f(insn.operands[0]));
+        break;
+
+    case PPC_INST_STFDU:
+        println("\t{} = {}.u32 + {};", ea(), r(insn.operands[2]), int32_t(insn.operands[1]));
+        println("\tPPC_STORE_U64({}, *reinterpret_cast<uint64_t*>(&{}.f64));", ea(), f(insn.operands[0]));
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
         break;
 
     case PPC_INST_STFDX:
@@ -1652,6 +1701,12 @@ bool Recompiler::Recompile(
 
     case PPC_INST_STHU:
         println("\t{} = {} + {}.u32;", ea(), int32_t(insn.operands[1]), r(insn.operands[2]));
+        println("\tPPC_STORE_U16({}, {}.u16);", ea(), r(insn.operands[0]));
+        println("\t{}.u32 = {};", r(insn.operands[2]), ea());
+        break;
+
+    case PPC_INST_STHUX:
+        println("\t{} = {}.u32 + {}.u32;", ea(), r(insn.operands[1]), r(insn.operands[2]));
         println("\tPPC_STORE_U16({}, {}.u16);", ea(), r(insn.operands[0]));
         println("\t{}.u32 = {};", r(insn.operands[2]), ea());
         break;
