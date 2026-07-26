@@ -1,9 +1,9 @@
 [main]
-file_path = "skate-3/default.xex"
+file_path = "../skate-3/default.xex"
 # patch_file_path = ""
-patched_file_path = "skate-3/default_patched.xex"
-out_directory_path = "ppc"
-switch_table_file_path = "skate-3/jump_table.toml"
+patched_file_path = "../skate-3/default_patched.xex"
+out_directory_path = "out"
+switch_table_file_path = "out/jump_table.toml"
 
 # functions
 restgprlr_14_address = 0x82f274e0
