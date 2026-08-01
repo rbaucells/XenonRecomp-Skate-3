@@ -337,6 +337,23 @@ int main(int argc, char** argv)
     println("# ---- SWITCH TYPE 3 JUMPTABLE ----");
     scanPattern(switch3, std::size(switch3), 3);
 
+    uint32_t switch4[] =
+    {
+        PPC_INST_LIS,
+        PPC_INST_ADDI,
+        PPC_INST_LBZX,
+        PPC_INST_LIS,
+        PPC_INST_NOP,
+        PPC_INST_ADDI,
+        PPC_INST_NOP,
+        PPC_INST_ADD,
+        PPC_INST_MTCTR,
+        PPC_INST_BCTR,
+    };
+
+    println("# ---- SWITCH TYPE 4 JUMPTABLE ----");
+    scanPattern(switch4, std::size(switch4), 4);
+
     std::ofstream f(argv[2]);
     f.write(out.data(), out.size());
 
