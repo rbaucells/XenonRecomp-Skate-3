@@ -117,9 +117,42 @@ void ReadTable(const Image& image, SwitchTable& table)
             table.labels[i] = base + (offsets[i] << shift);
         }
     }
+    else if (table.type == 4)
+    {
+        ppc_insn insn;
+
+        // lis (first instruction)
+        ppc::Disassemble(code , table.base, insn);
+
+        // lis loads into upper 16 bits
+        uint32_t pOffset = insn.operands[1] << 16;
+
+        // addi (2rd instruction)
+        ppc::Disassemble(code + 1, table.base + 4, insn);
+
+        pOffset += insn.operands[2];
+
+        const auto* offsets = (be<uint8_t>*) image.Find(pOffset);
+
+        // lis (4th instruction)
+        ppc::Disassemble(code + 3, table.base + 12, insn);
+
+        // lis loads into upper 16 bits
+        uint32_t base = insn.operands[1] << 16;
+
+        // addi (6th instruction)
+        ppc::Disassemble(code + 5, table.base + 20, insn);
+
+        base += insn.operands[2];
+
+        for (std::size_t i = 0; i < table.labels.size(); i++)
+        {
+            table.labels[i] = base + offsets[i];
+        }
+    }
     else
     {
-            assert(false);
+        assert(false);
     }
 }
 
@@ -268,8 +301,8 @@ int main(int argc, char** argv)
 
                 if (data != nullptr)
                 {
-                    if (type == 3) {
-                        fmt::println("Found type 3 at 0x{:x}", base + (data - dataStart));
+                    if (type == 4) {
+                        fmt::println("Found type 4 at 0x{:x}", base + (data - dataStart));
                     }
 
                     SwitchTable table{};
