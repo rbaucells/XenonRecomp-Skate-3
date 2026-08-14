@@ -1997,11 +1997,15 @@ bool Recompiler::Recompile(
         // TODO: vectorize
         for (int i = 0; i < 4; i++) {
             println("\t{0}.u32[{1}] = 0;", v(insn.operands[0]), i);
-            println("\tif (isnan({1}.f32[{0}]) || isnan({2}.f32[{0}])) {0}.u32[{0}] = 0xC0000000;", i, v(insn.operands[1]), v(insn.operands[2]), v(insn.operands[0]));
-            println("\telse {");
+            println("\tif (isnan({1}.f32[{0}]) || isnan({2}.f32[{0}])) {0}.u32[{0}] = 0xC0000000;", i, v(insn.operands[1]), v(insn.operands[2]));
+            println("\telse {{");
             println("\t\tif ({1}.f32[{0}] > {2}.f32[{0}]) {3}.u32[{0}] |= 0x80000000;", i, v(insn.operands[1]), v(insn.operands[2]), v(insn.operands[0]));
             println("\t\tif ({1}.f32[{0}] < -{2}.f32[{0}]) {3}.u32[{0}] |= 0x40000000;", i, v(insn.operands[1]), v(insn.operands[2]), v(insn.operands[0]));
-            println("\t}");
+            println("\t}}");
+        }
+
+        if (strchr(insn.opcode->name, '.')) {
+            println("{0}.eq = {1}.u32[0] == 0xC0000000 && {1}.u32[1] == 0xC0000000 && {1}.u32[2] == 0xC0000000 && {1}.u32[3] == 0xC0000000", cr(6), v(insn.operands[0]));
         }
         break;
 
