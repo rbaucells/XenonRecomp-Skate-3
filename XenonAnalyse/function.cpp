@@ -125,6 +125,13 @@ Function Function::Analyze(const void* code, size_t size, size_t base)
                 blockStack.emplace_back(lBlock);
             }
 
+            if (branchDest < base)
+            {
+                // Branches before base are just tail calls, no need to chase after those
+                RESTORE_DATA();
+                continue;
+            }
+
             size_t rBlock = fn.SearchBlock(base + rBase);
             if (rBlock == -1)
             {
