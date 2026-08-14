@@ -186,7 +186,7 @@ Function Function::Analyze(const void* code, size_t size, size_t base)
                     {
                         // right block's just going to return
                         const size_t lBase = (addr - base) + 4;
-                        size_t lBlock = fn.SearchBlock(lBase);
+                        size_t lBlock = fn.SearchBlock(base + lBase);
                         if (lBlock == -1)
                         {
                             blocks.emplace_back(lBase, 0);
