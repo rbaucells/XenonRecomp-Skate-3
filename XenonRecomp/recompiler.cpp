@@ -666,7 +666,17 @@ bool Recompiler::Recompile(
 
     case PPC_INST_BDZ:
         println("\t--{}.u64;", ctr());
-        println("\tif ({}.u32 == 0) goto loc_{:X};", ctr(), insn.operands[0]);
+        println("\tif ({}.u32 == 0) {{", ctr());
+        if (insn.operands[0] < fn.base || insn.operands[0] >= fn.base + fn.size)
+        {
+            printFunctionCall(insn.operands[0]);
+            println("\t\treturn;");
+        }
+        else
+        {
+            println("\t\tgoto loc_{:X};", insn.operands[0]);
+        }
+        println("\t}}");
         break;
 
     case PPC_INST_BDZLR:
@@ -676,25 +686,65 @@ bool Recompiler::Recompile(
 
     case PPC_INST_BDNZ:
         println("\t--{}.u64;", ctr());
-        println("\tif ({}.u32 != 0) goto loc_{:X};", ctr(), insn.operands[0]);
+        println("\tif ({}.u32 != 0) {{", ctr(), insn.operands[0]);
+        if (insn.operands[0] < fn.base || insn.operands[0] >= fn.base + fn.size)
+        {
+            printFunctionCall(insn.operands[0]);
+            println("\t\treturn;");
+        }
+        else
+        {
+            println("\t\tgoto loc_{:X};", insn.operands[0]);
+        }
+        println("}}");
         break;
 
     case PPC_INST_BDNZF:
         // NOTE: assuming eq here as a shortcut because all the instructions in the game do that
         println("\t--{}.u64;", ctr());
-        println("\tif ({}.u32 != 0 && !{}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
+        println("\tif ({}.u32 != 0 && !{}.eq) {{", ctr(), cr(insn.operands[0] / 4));
+        if (insn.operands[1] < fn.base || insn.operands[1] >= fn.base + fn.size)
+        {
+            printFunctionCall(insn.operands[1]);
+            println("\t\treturn;");
+        }
+        else
+        {
+            println("\t\tgoto loc_{:X};", insn.operands[1]);
+        }
+        println("\t}}");
         break;
 
     case PPC_INST_BDNZT:
         // NOTE: assuming eq here as a shortcut because all the instructions in the game do that
         println("\t--{}.u64;", ctr());
-        println("\tif ({}.u32 != 0 && {}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
+        println("\tif ({}.u32 != 0 && {}.eq) {{", ctr(), cr(insn.operands[0] / 4));
+        if (insn.operands[1] < fn.base || insn.operands[1] >= fn.base + fn.size)
+        {
+            printFunctionCall(insn.operands[1]);
+            println("\t\treturn;");
+        }
+        else
+        {
+            println("\t\tgoto loc_{:X};", insn.operands[1]);
+        }
+        println("\t}}");
         break;
 
     case PPC_INST_BDZF:
         // NOTE: assuming eq here as a shortcut because all the instructions in the game do that
         println("\t--{}.u64;", ctr());
-        println("\tif ({}.u32 == 0 && !{}.eq) goto loc_{:X};", ctr(), cr(insn.operands[0] / 4), insn.operands[1]);
+        println("\tif ({}.u32 == 0 && !{}.eq) {{", ctr(), cr(insn.operands[0] / 4));
+        if (insn.operands[1] < fn.base || insn.operands[1] >= fn.base + fn.size)
+        {
+            printFunctionCall(insn.operands[1]);
+            println("\t\treturn;");
+        }
+        else
+        {
+            println("\t\tgoto loc_{:X};", insn.operands[1]);
+        }
+        println("\t}}");
         break;
 
     case PPC_INST_BEQ:
