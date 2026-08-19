@@ -2006,7 +2006,7 @@ bool Recompiler::Recompile(
         }
 
         if (strchr(insn.opcode->name, '.')) {
-            println("{0}.eq = {1}.u32[0] == 0xC0000000 && {1}.u32[1] == 0xC0000000 && {1}.u32[2] == 0xC0000000 && {1}.u32[3] == 0xC0000000", cr(6), v(insn.operands[0]));
+            println("\t{0}.eq = {1}.u32[0] == 0xC0000000 && {1}.u32[1] == 0xC0000000 && {1}.u32[2] == 0xC0000000 && {1}.u32[3] == 0xC0000000;", cr(6), v(insn.operands[0]));
         }
         break;
 
