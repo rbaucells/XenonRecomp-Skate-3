@@ -14,6 +14,7 @@
 
 #include <x86/avx.h>
 #include <x86/sse.h>
+#include <bit>
 #include <x86/sse4.1.h>
 
 // SSE3 constants are missing from simde
