@@ -2801,9 +2801,19 @@ bool Recompiler::Recompile(const Function& fn)
     return allRecompiled;
 }
 
+#define USE_SUFFIX
+
 void Recompiler::Recompile(const std::filesystem::path& headerFilePath)
 {
     out.reserve(10 * 1024 * 1024);
+
+#ifdef USE_SUFFIX
+    // get suffix
+    std::string suffix;
+    std::filesystem::path outDirPath(config.outDirectoryPath);
+    if (!outDirPath.empty())
+        suffix = outDirPath.filename().string();
+#endif
 
     {
         println("#pragma once");
@@ -2812,19 +2822,19 @@ void Recompiler::Recompile(const std::filesystem::path& headerFilePath)
         println("#define PPC_CONFIG_H_INCLUDED\n");
 
         if (config.skipLr)
-            println("#define PPC_CONFIG_SKIP_LR");      
+            println("#define PPC_CONFIG_SKIP_LR");
         if (config.ctrAsLocalVariable)
-            println("#define PPC_CONFIG_CTR_AS_LOCAL");      
+            println("#define PPC_CONFIG_CTR_AS_LOCAL");
         if (config.xerAsLocalVariable)
-            println("#define PPC_CONFIG_XER_AS_LOCAL");      
+            println("#define PPC_CONFIG_XER_AS_LOCAL");
         if (config.reservedRegisterAsLocalVariable)
-            println("#define PPC_CONFIG_RESERVED_AS_LOCAL");      
+            println("#define PPC_CONFIG_RESERVED_AS_LOCAL");
         if (config.skipMsr)
-            println("#define PPC_CONFIG_SKIP_MSR");      
+            println("#define PPC_CONFIG_SKIP_MSR");
         if (config.crRegistersAsLocalVariables)
-            println("#define PPC_CONFIG_CR_AS_LOCAL");      
+            println("#define PPC_CONFIG_CR_AS_LOCAL");
         if (config.nonArgumentRegistersAsLocalVariables)
-            println("#define PPC_CONFIG_NON_ARGUMENT_AS_LOCAL");   
+            println("#define PPC_CONFIG_NON_ARGUMENT_AS_LOCAL");
         if (config.nonVolatileRegistersAsLocalVariables)
             println("#define PPC_CONFIG_NON_VOLATILE_AS_LOCAL");
 
@@ -2832,7 +2842,7 @@ void Recompiler::Recompile(const std::filesystem::path& headerFilePath)
 
         println("#define PPC_IMAGE_BASE 0x{:X}ull", image.base);
         println("#define PPC_IMAGE_SIZE 0x{:X}ull", image.size);
-        
+
         // Extract the address of the minimum code segment to store the function table at.
         size_t codeMin = ~0;
         size_t codeMax = 0;
@@ -2867,13 +2877,25 @@ void Recompiler::Recompile(const std::filesystem::path& headerFilePath)
         println("#pragma once");
 
         println("#include \"ppc_config.h\"\n");
-        
+
         std::ifstream stream(headerFilePath);
         if (stream.good())
         {
             std::stringstream ss;
             ss << stream.rdbuf();
             out += ss.str();
+
+#ifdef USE_SUFFIX
+            // replace extern PPCFuncMapping PPCFuncMappings[]; already in ppc_context
+            if (!suffix.empty())
+            {
+                std::string oldDecl = "extern PPCFuncMapping PPCFuncMappings[];";
+                std::string newDecl = fmt::format("extern PPCFuncMapping PPCFuncMappings_{}[];", suffix);
+                auto pos = out.find(oldDecl);
+                if (pos != std::string::npos)
+                    out.replace(pos, oldDecl.length(), newDecl);
+            }
+#endif
         }
 
         SaveCurrentOutData("ppc_context.h");
@@ -2893,7 +2915,16 @@ void Recompiler::Recompile(const std::filesystem::path& headerFilePath)
     {
         println("#include \"ppc_recomp_shared.h\"\n");
 
+        // append suffix to ppc func mappings variable
+#ifdef USE_SUFFIX
+        if (suffix.empty())
+            println("PPCFuncMapping PPCFuncMappings[] = {{");
+        else
+            println("PPCFuncMapping PPCFuncMappings_{}[] = {{", suffix);
+#else
         println("PPCFuncMapping PPCFuncMappings[] = {{");
+#endif
+
         for (auto& symbol : image.symbols)
             println("\t{{ 0x{:X}, {} }},", symbol.address, symbol.name);
 
